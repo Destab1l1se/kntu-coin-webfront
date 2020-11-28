@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import {AuthContext} from './context/auth';
 import PrivateRoute from './hoc/PrivateRoute';
 import Register from "./pages/Register";
+import SendCoins from "./pages/SendCoins";
+import * as axios from "./utils/axios";
 
 function App() {
     const existingAuthToken = localStorage.getItem('auth_token');
@@ -13,6 +15,7 @@ function App() {
 
     const setAuthToken = (newToken) => {
         localStorage.setItem('auth_token', newToken);
+        axios.setToken(newToken);
         setStateAuthToken(newToken);
     }
 
@@ -26,6 +29,7 @@ function App() {
                                 <li><NavLink to="/login">Login</NavLink></li>
                                 <li><NavLink to="/register">Register</NavLink></li>
                                 <li><NavLink to="/home">Home</NavLink></li>
+                                <li><NavLink to="/send-coins">Send coins</NavLink></li>
                             </ul>
                         </nav>
                     </header>
@@ -34,6 +38,7 @@ function App() {
                         <Switch>
                             <Route exact path='/login' component={Login}/>
                             <Route exact path='/register' component={Register}/>
+                            <PrivateRoute exact path='/send-coins' component={SendCoins}/>
                             <PrivateRoute path='/' component={Home}/>
                         </Switch>
                     </div>

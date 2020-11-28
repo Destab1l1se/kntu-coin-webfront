@@ -141,8 +141,6 @@ const Register = () => {
         });
     }
 
-    console.log(userData);
-
     if (isLoggedIn) {
         return <Redirect to="/"/>;
     }
