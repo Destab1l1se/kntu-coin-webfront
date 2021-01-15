@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {Button, Card, Col, Row} from "react-materialize";
 import Loader from 'react-loader-spinner';
 
@@ -8,8 +8,13 @@ import {sha256} from "../utils/crypto";
 
 const Mining = () => {
     const [inProgress, setInProgress] = useState(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-    useEffect(() => {
+    let successfulMessageTimeoutId = null;
+
+    const startMining = () => {
+        setInProgress(true);
+
         axios.get('/mining/get-data').then((result) => {
             const transactions = result.data.committed_transactions,
                 lastBlockHash = result.data.last_block_hash,
@@ -18,18 +23,31 @@ const Mining = () => {
             const recursive = (nonce) => {
                 const string = nonce + lastBlockHash + jsonTransactions;
                 sha256(string).then(r => {
-                    if (r.startsWith('000')) {
-                        console.log('Successful hash - ' + r);
-                        console.log(string);
+                    if (r.startsWith('0000')) {
+                        console.log(r);
+
                         axios.post('/mining/close-block', {
                             last_block_hash: lastBlockHash,
                             new_nonce: nonce
                         }).then((result) => {
-                            console.log(result);
+                            if (result.data.status === 'success') {
+                                setShowSuccessMessage(true);
+
+                                if (successfulMessageTimeoutId === null) {
+                                    successfulMessageTimeoutId = setTimeout(() => setShowSuccessMessage(false), 3000);
+                                } else {
+                                    clearTimeout(successfulMessageTimeoutId);
+                                    successfulMessageTimeoutId = setTimeout(() => setShowSuccessMessage(false), 3000);
+                                }
+
+                                startMining();
+                            }
+                        }).catch((error) => {
+                            //    ???
+                            console.log(error);
+                            setInProgress(false);
                         });
                     } else {
-                        console.log(r);
-
                         recursive(nonce + 1);
                     }
                 });
@@ -37,7 +55,7 @@ const Mining = () => {
 
             recursive(0);
         });
-    }, []);
+    }
 
 
     return (
@@ -65,9 +83,10 @@ const Mining = () => {
                                 <p style={{fontSize: '20px', margin: '50px 0'}} className="center-align">
                                     Mining in progress
                                 </p>
+                                {showSuccessMessage &&
                                 <div className="card-panel green white-text center-align">You've got correct hash! 50
                                     coins were added to your balance.
-                                </div>
+                                </div>}
                             </>
                             :
                             <>
@@ -79,7 +98,7 @@ const Mining = () => {
                                 <div className="row">
                                     <div className="col s12">
                                         <Button
-                                            onClick={() => setInProgress(true)}
+                                            onClick={startMining}
                                             node="button"
                                             waves="light"
                                             className="green"
